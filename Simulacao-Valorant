@@ -1,0 +1,49 @@
+# Desafio: montar um código que simule n vezes as partidas restantes de um campeonato e retorne uma tabela com a porcentagem de vezes que cada time terminou em cada posição
+
+import pandas as pd
+import random
+
+# Simulação de uma partida entre duas equipes
+def jogar_partida(equipe_a, equipe_b,prob_a):
+    _ = [equipe_a]*int(100*prob_a) + [equipe_b]*int(100*(1-prob_a))
+    resultado = random.choice(_)
+    return resultado
+
+# Simulação do resto do campeonato
+def simular_campeonato():
+    calendario = [("SEN","FUR",0.5),("NRG","EG",0.6),("C9","KRU",0.8),("LEV","LOUD",0.4),("MIBR","100T",0.3)]
+    tabela_dict = {"NRG": [5,3],"LOUD": [7,1],"FUR": [4,4],"LEV": [4,4],"KRU": [0,8],"C9": [7,1],"SEN": [3,5],"MIBR": [2,6],"100T": [4,4],"EG": [4,4]}
+    tabela_jogos = pd.DataFrame(tabela_dict).T
+    tabela_jogos.columns = ["Vitorias","Derrotas"]
+    for partida in calendario:
+        equipe_a,equipe_b,prob_a = partida
+        resultado_partida = jogar_partida(equipe_a, equipe_b,prob_a)
+        if resultado_partida == equipe_a:
+          tabela_jogos.loc[equipe_a][0] += 1
+          tabela_jogos.loc[equipe_b][1] += 1
+        elif resultado_partida == equipe_b:
+          tabela_jogos.loc[equipe_b][0] += 1
+          tabela_jogos.loc[equipe_a][1] += 1
+    tabela_jogos = tabela_jogos.sort_values("Vitorias",ascending=False)
+    posicoes = ["1º","2º","3º","4º","5º","6º","7º","8º","9º","10º"]
+    tabela_jogos["Posicoes"] = posicoes
+    tabela_jogos = tabela_jogos.reset_index().rename(columns={'index': 'Equipe'}).drop(["Vitorias","Derrotas"],axis='columns').values.tolist()
+    return tabela_jogos
+
+# Loop de n simulações
+num_simulacoes = int(input("Quantas simulações deseja fazer? "))
+armazenamento = []
+for _ in range(num_simulacoes):
+    tabela_simulada = simular_campeonato()
+    armazenamento.append(tabela_simulada)
+
+# Tabela final com a probabilidade de cada time terminar em cada posição
+posicoes = ["1º", "2º", "3º", "4º", "5º", "6º", "7º", "8º", "9º", "10º"]
+equipes = ["NRG","LOUD","FUR","LEV","KRU","C9","SEN","MIBR","100T","EG"]
+tabela_final = pd.DataFrame(index=posicoes, columns=equipes, data=0)
+
+for resultados_campeonato in armazenamento:
+    for item in resultados_campeonato:
+        tabela_final.loc[item[1],item[0]] += 100/num_simulacoes
+
+tabela_final.T
